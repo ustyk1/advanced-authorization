@@ -34,7 +34,6 @@ class UserService {
     await mailService.sendActivationMail(email, `${process.env.API_URL}/auth/activate/${activationLink}`);
 
     const userDto = new UserDto(user);
-    console.log('userDto', userDto)
     const tokens = tokenService.generateTokens({...userDto});
 
     await tokenService.saveToken(userDto.id, tokens.refreshToken);
@@ -75,11 +74,23 @@ class UserService {
     await user.save();
   }
 
-  async refresh(req, res) {
-    try {
-    } catch (error) {
-      console.log(error);
+  async refresh(refreshToken) {
+    if (!refreshToken) {
+      throw ApiError.UnauthorizedError();
     }
+
+    const userData = tokenService.validateRefreshToken(refreshToken);
+    const tokenFromDb = await tokenService.findToken(refreshToken);
+
+    if (!userData || !tokenFromDb) {
+      throw ApiError.UnauthorizedError();
+    }
+
+    const user = await User.findById(userData.id);
+    const userDto = new UserDto(user);
+    const tokens = tokenService.generateTokens({...userDto});
+    await tokenService.saveToken(userDto.id, tokens.refreshToken);
+
   }
 
   async getUsers(req, res) {
