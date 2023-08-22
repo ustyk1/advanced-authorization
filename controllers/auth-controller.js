@@ -78,7 +78,8 @@ class authController {
       // await userRole.save();
       // await adminRole.save();
 
-      res.json('server work')
+      const users = await userService.getAllUsers();
+      return res.json(users);
     } catch (error) {
       next(error);
     }

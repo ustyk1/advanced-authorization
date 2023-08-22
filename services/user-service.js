@@ -93,11 +93,9 @@ class UserService {
 
   }
 
-  async getUsers(req, res) {
-    try {
-    } catch (error) {
-      console.log(error);
-    }
+  async getAllUsers(req, res) {
+    const users = await User.find();
+    return users;
   }
 }
 

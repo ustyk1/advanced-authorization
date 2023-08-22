@@ -3,6 +3,7 @@ const router = new Router();
 const {body} = require('express-validator');
 
 const controller = require('../controllers/auth-controller');
+const authMiddleware = require('../middleware/auth-middleware');
 
 //endpoints
 router.post('/registration',
@@ -14,6 +15,6 @@ router.post('/login', controller.login);
 router.post('/logout', controller.logout);
 router.get('/activate/:link', controller.activate);
 router.get('/refresh', controller.refresh);
-router.get('/users', controller.getUsers); //тільки для авторизованих юзерів
+router.get('/users', authMiddleware, controller.getUsers); //тільки для авторизованих юзерів
 
 module.exports = router;
