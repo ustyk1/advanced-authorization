@@ -1,7 +1,5 @@
-const User = require('../models/User');
-const Role = require('../models/Role');
-const bcrypt = require('bcrypt');
-
+const {validationResult} = require('express-validator');
+const ApiError = require('../exeptions/api-error');
 
 const userService = require('../services/user-service');
 
@@ -9,6 +7,11 @@ class authController {
 
   async registration(req, res, next) {
     try {
+      const errors = validationResult(req);
+      if(!errors.isEmpty()) {
+        return next(ApiError.BadRequest('Помилка при валідації', errors.array()));
+      }
+
       const { userName, email, password, confirmPassword, phone } = req.body;
       const userData = await userService.registration(userName, email, password, confirmPassword, phone);
       console.log('userData', userData);
@@ -25,7 +28,10 @@ class authController {
 
   async login(req, res, next) {
     try {
-      
+      const {email, password} = req.body;
+      const userData = await userService.login(email, password);
+      res.cookie('refreshToken', userData.refreshToken, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true });
+      return res.status(200).json(userData);
     } catch (error) {
       next(error);
     }
@@ -33,6 +39,10 @@ class authController {
 
   async logout(req, res, next) {
     try {
+      const {refreshToken} = req.cookies;
+      const token = await userService.logout(refreshToken);
+      res.clearCookie('refreshToken');
+      return res.json(token);
 
     } catch (error) {
       next(error);

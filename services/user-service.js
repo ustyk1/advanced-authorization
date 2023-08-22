@@ -34,7 +34,7 @@ class UserService {
     await mailService.sendActivationMail(email, `${process.env.API_URL}/auth/activate/${activationLink}`);
 
     const userDto = new UserDto(user);
-
+    console.log('userDto', userDto)
     const tokens = tokenService.generateTokens({...userDto});
 
     await tokenService.saveToken(userDto.id, tokens.refreshToken);
@@ -42,22 +42,31 @@ class UserService {
     return { ...tokens, user: {...userDto, userName, phone} }
   }
 
-  async login(req, res) {
-    try {
-    } catch (error) {
-      console.log(error);
+  async login(email, password) {
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw ApiError.BadRequest('Користувач не знайдений');
     }
+
+    const isPasswordEquels = await bcrypt.compare(password, user.password);
+    if (!isPasswordEquels) {
+      throw ApiError.BadRequest('Невірний пароль');
+    }
+
+    const userDto = new UserDto(user);
+    const tokens = tokenService.generateTokens({...userDto});
+    await tokenService.saveToken(userDto.id, tokens.refreshToken);
+
+    return { ...tokens, user: {...userDto, userName: user.userName, phone: user.phone} }
   }
 
-  async logout(req, res) {
-    try {
-    } catch (error) {
-      console.log(error);
-    }
+  async logout(refreshToken) {
+    const token = tokenService.removeToken(refreshToken);
+    return token;
   }
 
   async activate(activationLink) {
-    const user = User.findOne({activationLink});
+    const user = await User.findOne({activationLink});
     if (!user) {
       throw ApiError.BadRequest('Не коректне посилання активації');
     }
